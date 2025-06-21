@@ -1,0 +1,462 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Fixed Income Position Schema",
+  "required": ["positionId", "cusip", "asOfDate"],
+  "properties": {
+    "positionId": {"type": "string"},
+    "cusip": {"type": "string"},
+    "isin": {"type": "string"},
+    "sedol": {"type": "string"},
+    "ticker": {"type": "string"},
+    "instrumentName": {"type": "string"},
+    "instrumentType": {"type": "string", "enum": ["Treasury", "Corporate", "Municipal", "MBS", "ABS", "Agency", "Sovereign"]},
+    "asOfDate": {"type": "string", "format": "date-time"},
+    "bookName": {"type": "string"},
+    "portfolio": {"type": "string"},
+    "trader": {"type": "string"},
+    "desk": {"type": "string"},
+    "region": {"type": "string"},
+    "country": {"type": "string"},
+    "currency": {"type": "string"},
+    "quantity": {"type": "number"},
+    "notionalAmount": {"type": "number"},
+    "marketValue": {"type": "number"},
+    "bookValue": {"type": "number"},
+    "accruedInterest": {"type": "number"},
+    "totalValue": {"type": "number"},
+    "costBasis": {"type": "number"},
+    "averagePrice": {"type": "number"},
+    "currentPrice": {"type": "number"},
+    "priceSource": {"type": "string"},
+    "pnl": {"type": "number"},
+    "unrealizedPnl": {"type": "number"},
+    "realizedPnl": {"type": "number"},
+    "dailyPnl": {"type": "number"},
+    "mtdPnl": {"type": "number"},
+    "ytdPnl": {"type": "number"},
+    "maturityDate": {"type": "string", "format": "date"},
+    "issueDate": {"type": "string", "format": "date"},
+    "couponRate": {"type": "number"},
+    "couponFrequency": {"type": "integer"},
+    "dayCountConvention": {"type": "string"},
+    "nextCouponDate": {"type": "string", "format": "date"},
+    "yield": {"type": "number"},
+    "yieldToMaturity": {"type": "number"},
+    "modifiedDuration": {"type": "number"},
+    "effectiveDuration": {"type": "number"},
+    "macaulayDuration": {"type": "number"},
+    "convexity": {"type": "number"},
+    "effectiveConvexity": {"type": "number"},
+    "spread": {"type": "number"},
+    "assetSwapSpread": {"type": "number"},
+    "zSpread": {"type": "number"},
+    "oas": {"type": "number"},
+    "dv01": {"type": "number"},
+    "pv01": {"type": "number"},
+    "cs01": {"type": "number"},
+    "rating": {
+      "type": "object",
+      "properties": {
+        "moody": {"type": "string"},
+        "sp": {"type": "string"},
+        "fitch": {"type": "string"},
+        "composite": {"type": "string"},
+        "internal": {"type": "string"}
+      }
+    },
+    "issuer": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "sector": {"type": "string"},
+        "industry": {"type": "string"},
+        "country": {"type": "string"},
+        "parentCompany": {"type": "string"},
+        "marketCap": {"type": "number"},
+        "creditRating": {"type": "string"}
+      }
+    },
+    "riskMetrics": {
+      "type": "object",
+      "properties": {
+        "var95": {"type": "number"},
+        "var99": {"type": "number"},
+        "cvar95": {"type": "number"},
+        "cvar99": {"type": "number"},
+        "expectedShortfall": {"type": "number"},
+        "beta": {"type": "number"},
+        "correlation": {"type": "number"},
+        "trackingError": {"type": "number"},
+        "sharpeRatio": {"type": "number"},
+        "informationRatio": {"type": "number"}
+      }
+    },
+    "analytics": {
+      "type": "object",
+      "properties": {
+        "keyRateDuration": {
+          "type": "object",
+          "properties": {
+            "1M": {"type": "number"},
+            "3M": {"type": "number"},
+            "6M": {"type": "number"},
+            "1Y": {"type": "number"},
+            "2Y": {"type": "number"},
+            "3Y": {"type": "number"},
+            "5Y": {"type": "number"},
+            "7Y": {"type": "number"},
+            "10Y": {"type": "number"},
+            "20Y": {"type": "number"},
+            "30Y": {"type": "number"}
+          }
+        },
+        "scenarioAnalysis": {
+          "type": "object",
+          "properties": {
+            "parallelShiftUp100": {"type": "number"},
+            "parallelShiftDown100": {"type": "number"},
+            "steepening50": {"type": "number"},
+            "flattening50": {"type": "number"},
+            "twist": {"type": "number"}
+          }
+        },
+        "greeks": {
+          "type": "object",
+          "properties": {
+            "delta": {"type": "number"},
+            "gamma": {"type": "number"},
+            "theta": {"type": "number"},
+            "vega": {"type": "number"},
+            "rho": {"type": "number"}
+          }
+        }
+      }
+    },
+    "cashflows": {
+      "type": "object",
+      "properties": {
+        "nextCashflow": {"type": "number"},
+        "nextCashflowDate": {"type": "string", "format": "date"},
+        "totalRemainingCashflows": {"type": "number"},
+        "averageLife": {"type": "number"},
+        "weightedAverageLife": {"type": "number"}
+      }
+    },
+    "prepayment": {
+      "type": "object",
+      "properties": {
+        "cpr": {"type": "number"},
+        "smm": {"type": "number"},
+        "psa": {"type": "number"},
+        "historicalCpr": {"type": "number"},
+        "projectedCpr": {"type": "number"}
+      }
+    },
+    "collateral": {
+      "type": "object",
+      "properties": {
+        "type": {"type": "string"},
+        "description": {"type": "string"},
+        "value": {"type": "number"},
+        "ltv": {"type": "number"},
+        "coverage": {"type": "number"}
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "regulatoryCapital": {"type": "number"},
+        "rwa": {"type": "number"},
+        "liquidityCoverage": {"type": "number"},
+        "nsfr": {"type": "number"},
+        "leverageRatio": {"type": "number"},
+        "concentrationLimit": {"type": "number"},
+        "breachStatus": {"type": "boolean"}
+      }
+    },
+    "accounting": {
+      "type": "object",
+      "properties": {
+        "accountingClassification": {"type": "string"},
+        "fairValueHierarchy": {"type": "integer"},
+        "hedgeDesignation": {"type": "string"},
+        "hedgeEffectiveness": {"type": "number"},
+        "impairment": {"type": "number"},
+        "provision": {"type": "number"}
+      }
+    },
+    "liquidity": {
+      "type": "object",
+      "properties": {
+        "bidAskSpread": {"type": "number"},
+        "avgDailyVolume": {"type": "number"},
+        "liquidityScore": {"type": "number"},
+        "marketDepth": {"type": "number"},
+        "daysToLiquidate": {"type": "number"}
+      }
+    },
+    "settlement": {
+      "type": "object",
+      "properties": {
+        "settlementDate": {"type": "string", "format": "date"},
+        "settlementType": {"type": "string"},
+        "clearingHouse": {"type": "string"},
+        "custodian": {"type": "string"},
+        "settlementStatus": {"type": "string"}
+      }
+    },
+    "optionality": {
+      "type": "object",
+      "properties": {
+        "callable": {"type": "boolean"},
+        "putable": {"type": "boolean"},
+        "convertible": {"type": "boolean"},
+        "nextCallDate": {"type": "string", "format": "date"},
+        "callPrice": {"type": "number"},
+        "putPrice": {"type": "number"},
+        "conversionRatio": {"type": "number"}
+      }
+    },
+    "historicalData": {
+      "type": "object",
+      "properties": {
+        "purchaseDate": {"type": "string", "format": "date"},
+        "purchasePrice": {"type": "number"},
+        "purchaseYield": {"type": "number"},
+        "highPrice52Week": {"type": "number"},
+        "lowPrice52Week": {"type": "number"},
+        "avgPrice52Week": {"type": "number"}
+      }
+    },
+    "marketData": {
+      "type": "object",
+      "properties": {
+        "lastTradeTime": {"type": "string", "format": "date-time"},
+        "lastTradePrice": {"type": "number"},
+        "bidPrice": {"type": "number"},
+        "askPrice": {"type": "number"},
+        "midPrice": {"type": "number"},
+        "volume": {"type": "number"}
+      }
+    },
+    "benchmarks": {
+      "type": "object",
+      "properties": {
+        "benchmarkIndex": {"type": "string"},
+        "benchmarkSpread": {"type": "number"},
+        "excessReturn": {"type": "number"},
+        "trackingDifference": {"type": "number"}
+      }
+    },
+    "stress": {
+      "type": "object",
+      "properties": {
+        "stressScenario1": {"type": "number"},
+        "stressScenario2": {"type": "number"},
+        "stressScenario3": {"type": "number"},
+        "worstCaseScenario": {"type": "number"}
+      }
+    },
+    "allocation": {
+      "type": "object",
+      "properties": {
+        "strategyAllocation": {"type": "number"},
+        "sectorAllocation": {"type": "number"},
+        "regionAllocation": {"type": "number"},
+        "ratingAllocation": {"type": "number"}
+      }
+    },
+    "performance": {
+      "type": "object",
+      "properties": {
+        "dailyReturn": {"type": "number"},
+        "mtdReturn": {"type": "number"},
+        "qtdReturn": {"type": "number"},
+        "ytdReturn": {"type": "number"},
+        "inceptionReturn": {"type": "number"}
+      }
+    },
+    "fees": {
+      "type": "object",
+      "properties": {
+        "managementFee": {"type": "number"},
+        "performanceFee": {"type": "number"},
+        "custodyFee": {"type": "number"},
+        "transactionCost": {"type": "number"},
+        "totalExpenseRatio": {"type": "number"}
+      }
+    },
+    "counterparty": {
+      "type": "object",
+      "properties": {
+        "counterpartyName": {"type": "string"},
+        "counterpartyRating": {"type": "string"},
+        "exposureLimit": {"type": "number"},
+        "currentExposure": {"type": "number"},
+        "collateralPosted": {"type": "number"}
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "properties": {
+        "prospectus": {"type": "string"},
+        "termSheet": {"type": "string"},
+        "legalAgreement": {"type": "string"},
+        "lastReviewDate": {"type": "string", "format": "date"}
+      }
+    },
+    "tax": {
+      "type": "object",
+      "properties": {
+        "taxLotId": {"type": "string"},
+        "taxBasis": {"type": "number"},
+        "unrealizedTaxGain": {"type": "number"},
+        "taxRate": {"type": "number"},
+        "withholdingTax": {"type": "number"}
+      }
+    },
+    "hedging": {
+      "type": "object",
+      "properties": {
+        "hedgeRatio": {"type": "number"},
+        "hedgeInstrument": {"type": "string"},
+        "hedgeNotional": {"type": "number"},
+        "hedgeEffectiveness": {"type": "number"}
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "properties": {
+        "reportingCurrency": {"type": "string"},
+        "reportingValue": {"type": "number"},
+        "fxRate": {"type": "number"},
+        "reportingDate": {"type": "string", "format": "date"}
+      }
+    },
+    "tradingLimits": {
+      "type": "object",
+      "properties": {
+        "positionLimit": {"type": "number"},
+        "varLimit": {"type": "number"},
+        "concentrationLimit": {"type": "number"},
+        "stopLoss": {"type": "number"}
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "createdDate": {"type": "string", "format": "date-time"},
+        "modifiedDate": {"type": "string", "format": "date-time"},
+        "createdBy": {"type": "string"},
+        "modifiedBy": {"type": "string"},
+        "version": {"type": "integer"}
+      }
+    },
+    "additionalAttributes": {
+      "type": "object",
+      "properties": {
+        "attribute1": {"type": "string"},
+        "attribute2": {"type": "number"},
+        "attribute3": {"type": "boolean"},
+        "attribute4": {"type": "string"},
+        "attribute5": {"type": "number"},
+        "attribute6": {"type": "string"},
+        "attribute7": {"type": "number"},
+        "attribute8": {"type": "string"},
+        "attribute9": {"type": "number"},
+        "attribute10": {"type": "string"},
+        "attribute11": {"type": "number"},
+        "attribute12": {"type": "string"},
+        "attribute13": {"type": "number"},
+        "attribute14": {"type": "string"},
+        "attribute15": {"type": "number"},
+        "attribute16": {"type": "string"},
+        "attribute17": {"type": "number"},
+        "attribute18": {"type": "string"},
+        "attribute19": {"type": "number"},
+        "attribute20": {"type": "string"},
+        "attribute21": {"type": "number"},
+        "attribute22": {"type": "string"},
+        "attribute23": {"type": "number"},
+        "attribute24": {"type": "string"},
+        "attribute25": {"type": "number"},
+        "attribute26": {"type": "string"},
+        "attribute27": {"type": "number"},
+        "attribute28": {"type": "string"},
+        "attribute29": {"type": "number"},
+        "attribute30": {"type": "string"},
+        "attribute31": {"type": "number"},
+        "attribute32": {"type": "string"},
+        "attribute33": {"type": "number"},
+        "attribute34": {"type": "string"},
+        "attribute35": {"type": "number"},
+        "attribute36": {"type": "string"},
+        "attribute37": {"type": "number"},
+        "attribute38": {"type": "string"},
+        "attribute39": {"type": "number"},
+        "attribute40": {"type": "string"},
+        "attribute41": {"type": "number"},
+        "attribute42": {"type": "string"},
+        "attribute43": {"type": "number"},
+        "attribute44": {"type": "string"},
+        "attribute45": {"type": "number"},
+        "attribute46": {"type": "string"},
+        "attribute47": {"type": "number"},
+        "attribute48": {"type": "string"},
+        "attribute49": {"type": "number"},
+        "attribute50": {"type": "string"},
+        "attribute51": {"type": "number"},
+        "attribute52": {"type": "string"},
+        "attribute53": {"type": "number"},
+        "attribute54": {"type": "string"},
+        "attribute55": {"type": "number"},
+        "attribute56": {"type": "string"},
+        "attribute57": {"type": "number"},
+        "attribute58": {"type": "string"},
+        "attribute59": {"type": "number"},
+        "attribute60": {"type": "string"},
+        "attribute61": {"type": "number"},
+        "attribute62": {"type": "string"},
+        "attribute63": {"type": "number"},
+        "attribute64": {"type": "string"},
+        "attribute65": {"type": "number"},
+        "attribute66": {"type": "string"},
+        "attribute67": {"type": "number"},
+        "attribute68": {"type": "string"},
+        "attribute69": {"type": "number"},
+        "attribute70": {"type": "string"},
+        "attribute71": {"type": "number"},
+        "attribute72": {"type": "string"},
+        "attribute73": {"type": "number"},
+        "attribute74": {"type": "string"},
+        "attribute75": {"type": "number"},
+        "attribute76": {"type": "string"},
+        "attribute77": {"type": "number"},
+        "attribute78": {"type": "string"},
+        "attribute79": {"type": "number"},
+        "attribute80": {"type": "string"},
+        "attribute81": {"type": "number"},
+        "attribute82": {"type": "string"},
+        "attribute83": {"type": "number"},
+        "attribute84": {"type": "string"},
+        "attribute85": {"type": "number"},
+        "attribute86": {"type": "string"},
+        "attribute87": {"type": "number"},
+        "attribute88": {"type": "string"},
+        "attribute89": {"type": "number"},
+        "attribute90": {"type": "string"},
+        "attribute91": {"type": "number"},
+        "attribute92": {"type": "string"},
+        "attribute93": {"type": "number"},
+        "attribute94": {"type": "string"},
+        "attribute95": {"type": "number"},
+        "attribute96": {"type": "string"},
+        "attribute97": {"type": "number"},
+        "attribute98": {"type": "string"},
+        "attribute99": {"type": "number"},
+        "attribute100": {"type": "string"}
+      }
+    }
+  }
+}

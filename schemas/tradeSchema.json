@@ -1,0 +1,269 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Fixed Income Trade Schema",
+  "required": ["tradeId", "cusip", "tradeDate"],
+  "properties": {
+    "tradeId": {"type": "string"},
+    "cusip": {"type": "string"},
+    "isin": {"type": "string"},
+    "sedol": {"type": "string"},
+    "ticker": {"type": "string"},
+    "instrumentName": {"type": "string"},
+    "instrumentType": {"type": "string"},
+    "tradeDate": {"type": "string", "format": "date-time"},
+    "settlementDate": {"type": "string", "format": "date"},
+    "valueDate": {"type": "string", "format": "date"},
+    "side": {"type": "string", "enum": ["BUY", "SELL", "SHORT", "COVER"]},
+    "quantity": {"type": "number"},
+    "notionalAmount": {"type": "number"},
+    "price": {"type": "number"},
+    "yield": {"type": "number"},
+    "spread": {"type": "number"},
+    "accruedInterest": {"type": "number"},
+    "totalConsideration": {"type": "number"},
+    "principalAmount": {"type": "number"},
+    "currency": {"type": "string"},
+    "fxRate": {"type": "number"},
+    "baseCurrencyAmount": {"type": "number"},
+    "tradeType": {"type": "string", "enum": ["MARKET", "LIMIT", "STOP", "AGENCY", "PRINCIPAL", "CROSS"]},
+    "executionType": {"type": "string"},
+    "orderType": {"type": "string"},
+    "status": {"type": "string", "enum": ["NEW", "FILLED", "PARTIAL", "CANCELLED", "REJECTED", "EXPIRED"]},
+    "trader": {"type": "string"},
+    "salesperson": {"type": "string"},
+    "book": {"type": "string"},
+    "portfolio": {"type": "string"},
+    "desk": {"type": "string"},
+    "strategy": {"type": "string"},
+    "counterparty": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "lei": {"type": "string"},
+        "id": {"type": "string"},
+        "type": {"type": "string"},
+        "rating": {"type": "string"},
+        "country": {"type": "string"},
+        "sector": {"type": "string"}
+      }
+    },
+    "broker": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "id": {"type": "string"},
+        "commission": {"type": "number"},
+        "commissionType": {"type": "string"}
+      }
+    },
+    "venue": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "type": {"type": "string"},
+        "mic": {"type": "string"},
+        "country": {"type": "string"}
+      }
+    },
+    "clearing": {
+      "type": "object",
+      "properties": {
+        "clearingHouse": {"type": "string"},
+        "clearingBroker": {"type": "string"},
+        "clearingAccount": {"type": "string"},
+        "clearingStatus": {"type": "string"},
+        "clearingFee": {"type": "number"}
+      }
+    },
+    "settlement": {
+      "type": "object",
+      "properties": {
+        "custodian": {"type": "string"},
+        "settlementAccount": {"type": "string"},
+        "settlementInstructions": {"type": "string"},
+        "dvp": {"type": "boolean"},
+        "failureReason": {"type": "string"}
+      }
+    },
+    "fees": {
+      "type": "object",
+      "properties": {
+        "brokerCommission": {"type": "number"},
+        "exchangeFee": {"type": "number"},
+        "clearingFee": {"type": "number"},
+        "settlementFee": {"type": "number"},
+        "regulatoryFee": {"type": "number"},
+        "otherFees": {"type": "number"},
+        "totalFees": {"type": "number"}
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "bestExecution": {"type": "boolean"},
+        "regulatoryReporting": {"type": "boolean"},
+        "mifidClass": {"type": "string"},
+        "doddFrank": {"type": "boolean"},
+        "volcker": {"type": "boolean"},
+        "preTradeChecks": {"type": "string"},
+        "postTradeChecks": {"type": "string"}
+      }
+    },
+    "allocation": {
+      "type": "object",
+      "properties": {
+        "allocationMethod": {"type": "string"},
+        "allocationStatus": {"type": "string"},
+        "allocations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "account": {"type": "string"},
+              "quantity": {"type": "number"},
+              "percentage": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "properties": {
+        "priceSource": {"type": "string"},
+        "quotedPrice": {"type": "number"},
+        "executedPrice": {"type": "number"},
+        "markupMarkdown": {"type": "number"},
+        "benchmarkPrice": {"type": "number"},
+        "slippage": {"type": "number"}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "executionTime": {"type": "string", "format": "date-time"},
+        "executionVenue": {"type": "string"},
+        "executionMethod": {"type": "string"},
+        "orderTime": {"type": "string", "format": "date-time"},
+        "confirmationTime": {"type": "string", "format": "date-time"},
+        "latency": {"type": "number"}
+      }
+    },
+    "reference": {
+      "type": "object",
+      "properties": {
+        "clientOrderId": {"type": "string"},
+        "brokerOrderId": {"type": "string"},
+        "exchangeOrderId": {"type": "string"},
+        "blockTradeId": {"type": "string"},
+        "allocationId": {"type": "string"},
+        "parentOrderId": {"type": "string"}
+      }
+    },
+    "marketData": {
+      "type": "object",
+      "properties": {
+        "bidPriceAtExecution": {"type": "number"},
+        "askPriceAtExecution": {"type": "number"},
+        "midPriceAtExecution": {"type": "number"},
+        "vwap": {"type": "number"},
+        "marketVolume": {"type": "number"}
+      }
+    },
+    "analytics": {
+      "type": "object",
+      "properties": {
+        "tca": {
+          "type": "object",
+          "properties": {
+            "implementationShortfall": {"type": "number"},
+            "arrivalPrice": {"type": "number"},
+            "participationRate": {"type": "number"},
+            "marketImpact": {"type": "number"},
+            "timingCost": {"type": "number"}
+          }
+        },
+        "pnl": {
+          "type": "object",
+          "properties": {
+            "realizedPnl": {"type": "number"},
+            "unrealizedPnl": {"type": "number"},
+            "tradePnl": {"type": "number"},
+            "dayOnePnl": {"type": "number"}
+          }
+        }
+      }
+    },
+    "riskMetrics": {
+      "type": "object",
+      "properties": {
+        "dv01": {"type": "number"},
+        "duration": {"type": "number"},
+        "convexity": {"type": "number"},
+        "var": {"type": "number"},
+        "creditExposure": {"type": "number"}
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "properties": {
+        "createdDate": {"type": "string", "format": "date-time"},
+        "modifiedDate": {"type": "string", "format": "date-time"},
+        "cancelledDate": {"type": "string", "format": "date-time"},
+        "amendmentHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {"type": "string", "format": "date-time"},
+              "field": {"type": "string"},
+              "oldValue": {"type": "string"},
+              "newValue": {"type": "string"},
+              "reason": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "properties": {
+        "confirmationId": {"type": "string"},
+        "masterAgreement": {"type": "string"},
+        "supplementalAgreement": {"type": "string"},
+        "tradeTicket": {"type": "string"}
+      }
+    },
+    "collateral": {
+      "type": "object",
+      "properties": {
+        "collateralType": {"type": "string"},
+        "collateralAmount": {"type": "number"},
+        "marginRequirement": {"type": "number"},
+        "haircut": {"type": "number"}
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "properties": {
+        "tradeReportingStatus": {"type": "string"},
+        "regulatoryReportingId": {"type": "string"},
+        "reportingTimestamp": {"type": "string", "format": "date-time"},
+        "reportingJurisdictions": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "source": {"type": "string"},
+        "version": {"type": "integer"},
+        "lastUpdatedBy": {"type": "string"},
+        "comments": {"type": "string"}
+      }
+    }
+  }
+}

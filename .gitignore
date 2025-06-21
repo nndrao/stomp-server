@@ -1,0 +1,27 @@
+# Large data files
+data/positions.json
+data/trades.json
+
+# Environment files
+.env
+config.env
+
+# Node modules
+node_modules/
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/ 
