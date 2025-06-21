@@ -24,4 +24,16 @@ Thumbs.db
 
 # Temporary files
 tmp/
-temp/ 
+temp/
+
+# Railway
+.railway/
+
+# Build outputs
+dist/
+build/
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock 

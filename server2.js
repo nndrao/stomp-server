@@ -5,6 +5,13 @@ const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 const mongoDataAccess = require('./mongoDataAccess');
 
+// Load environment variables
+require('dotenv').config({ path: './config.env' });
+
+// Configuration
+const PORT = process.env.PORT || 8080;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
 // Load data from MongoDB
 let positions = [];
 let trades = [];
@@ -271,8 +278,7 @@ function generateTradeUpdate(baseTrade) {
     return updateDateToToday(update);
 }
 
-// WebSocket server
-const wss = new WebSocket.Server({ port: 8080 });
+// WebSocket server (will be attached to HTTP server)
 
 // Client management
 const clients = new Map();
@@ -602,10 +608,63 @@ class StompConnection {
     }
 }
 
+// Create HTTP server for health checks
+const http = require('http');
+const httpServer = http.createServer((req, res) => {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
+        return;
+    }
+
+    if (req.url === '/health') {
+        const healthStatus = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            database: 'connected',
+            memory: process.memoryUsage(),
+            environment: NODE_ENV,
+            positionsCount: positions.length,
+            tradesCount: trades.length
+        };
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(healthStatus, null, 2));
+    } else if (req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            name: 'STOMP Fixed Income Server',
+            version: '1.0.0',
+            environment: NODE_ENV,
+            endpoints: {
+                health: '/health',
+                websocket: `ws://localhost:${PORT}`
+            }
+        }, null, 2));
+    } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Not Found' }));
+    }
+});
+
 // Start server after loading data
 async function startServer() {
     // Load data from MongoDB first
     await loadDataFromMongoDB();
+    
+    // Start HTTP server for health checks
+    httpServer.listen(PORT, () => {
+        console.log(`📋 HTTP server running on port ${PORT} (health checks)`);
+    });
+    
+    // Attach WebSocket server to HTTP server
+    const wss = new WebSocket.Server({ server: httpServer });
     
     // WebSocket connection handling
     wss.on('connection', (ws) => {
@@ -637,7 +696,9 @@ async function startServer() {
         });
     });
 
-    console.log('🚀 STOMP Fixed Income Server running on ws://localhost:8080');
+    console.log(`🚀 STOMP Fixed Income Server running on port ${PORT}`);
+    console.log(`📋 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
     console.log('');
     console.log('Usage:');
     console.log('1. Client subscribes to: /snapshot/positions or /snapshot/trades');

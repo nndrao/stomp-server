@@ -1,4 +1,6 @@
 const { MongoClient } = require('mongodb');
+
+// Load environment variables from config.env or Railway environment
 require('dotenv').config({ path: './config.env' });
 
 class MongoDataAccess {
