@@ -14,7 +14,7 @@
     "migrate-to-mongodb": "node migrateToMongoDB.js",
     "test-client": "node testClient.js",
     "example": "node exampleClient.js",
-    "health": "node healthCheck.js"
+    "debug-health": "node debug-health.js"
   },
   "dependencies": {
     "dotenv": "^16.5.0",

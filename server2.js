@@ -610,7 +610,7 @@ class StompConnection {
 
 // Create HTTP server for health checks
 const http = require('http');
-const httpServer = http.createServer((req, res) => {
+const httpServer = http.createServer(async (req, res) => {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -623,19 +623,37 @@ const httpServer = http.createServer((req, res) => {
     }
 
     if (req.url === '/health') {
-        const healthStatus = {
-            status: 'healthy',
-            timestamp: new Date().toISOString(),
-            uptime: process.uptime(),
-            database: 'connected',
-            memory: process.memoryUsage(),
-            environment: NODE_ENV,
-            positionsCount: positions.length,
-            tradesCount: trades.length
-        };
+        try {
+            // Check MongoDB connection by trying to get positions count
+            await mongoDataAccess.getPositionsCount();
+            
+            const healthStatus = {
+                status: 'healthy',
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime(),
+                database: 'connected',
+                memory: process.memoryUsage(),
+                environment: NODE_ENV,
+                positionsCount: positions.length,
+                tradesCount: trades.length,
+                mongodbConnected: true
+            };
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(healthStatus, null, 2));
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(healthStatus, null, 2));
+        } catch (error) {
+            console.error('Health check failed:', error);
+            const errorStatus = {
+                status: 'unhealthy',
+                timestamp: new Date().toISOString(),
+                error: error.message,
+                database: 'disconnected',
+                mongodbConnected: false
+            };
+
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(errorStatus, null, 2));
+        }
     } else if (req.url === '/') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
