@@ -11,10 +11,40 @@ require('dotenv').config({ path: './config.env' });
 // Configuration
 const PORT = process.env.PORT || 8080;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const USE_LOCAL_DATA = process.env.USE_LOCAL_DATA === 'true';
 
-// Load data from MongoDB
+// Load data from MongoDB with local fallback
 let positions = [];
 let trades = [];
+
+async function loadDataFromLocalFiles() {
+    try {
+        console.log('🔄 Loading data from local JSON files...');
+        
+        const positionsPath = path.join(__dirname, 'data', 'positions.json');
+        const tradesPath = path.join(__dirname, 'data', 'trades.json');
+        
+        // Check if files exist
+        if (!fs.existsSync(positionsPath) || !fs.existsSync(tradesPath)) {
+            throw new Error('Local data files not found. Run "npm run generate-data" first.');
+        }
+        
+        // Load positions
+        const positionsData = fs.readFileSync(positionsPath, 'utf-8');
+        positions = JSON.parse(positionsData);
+        
+        // Load trades  
+        const tradesData = fs.readFileSync(tradesPath, 'utf-8');
+        trades = JSON.parse(tradesData);
+        
+        console.log(`✅ Loaded ${positions.length} positions and ${trades.length} trades from local files`);
+        console.log(`📁 Data source: Local JSON files`);
+        
+    } catch (error) {
+        console.error('❌ Error loading data from local files:', error);
+        throw error;
+    }
+}
 
 async function loadDataFromMongoDB() {
     try {
@@ -22,10 +52,32 @@ async function loadDataFromMongoDB() {
         positions = await mongoDataAccess.getAllPositions();
         trades = await mongoDataAccess.getAllTrades();
         console.log(`✅ Loaded ${positions.length} positions and ${trades.length} trades from MongoDB`);
+        console.log(`☁️ Data source: MongoDB Atlas`);
     } catch (error) {
         console.error('❌ Error loading data from MongoDB:', error);
-        console.log('Please run "node migrateToMongoDB.js" first to migrate your data to MongoDB');
-        process.exit(1);
+        console.log('⚠️ Attempting to fall back to local JSON files...');
+        
+        try {
+            await loadDataFromLocalFiles();
+            console.log('✅ Successfully loaded data from local fallback');
+        } catch (localError) {
+            console.error('❌ Local fallback also failed:', localError);
+            console.log('');
+            console.log('🔧 To fix this issue:');
+            console.log('  1. For MongoDB: Run "node migrateToMongoDB.js" to migrate data');
+            console.log('  2. For local files: Run "npm run generate-data" to create local data');
+            console.log('  3. Or check your MongoDB connection in config.env');
+            process.exit(1);
+        }
+    }
+}
+
+async function loadData() {
+    if (USE_LOCAL_DATA) {
+        console.log('🏠 Forced local data loading (USE_LOCAL_DATA=true)');
+        await loadDataFromLocalFiles();
+    } else {
+        await loadDataFromMongoDB();
     }
 }
 
@@ -631,28 +683,54 @@ const httpServer = http.createServer(async (req, res) => {
                 status: 'healthy',
                 timestamp: new Date().toISOString(),
                 uptime: process.uptime(),
-                database: 'connected',
+                database: USE_LOCAL_DATA ? 'local' : 'connected',
+                dataSource: USE_LOCAL_DATA ? 'Local JSON Files' : 'MongoDB Atlas',
                 memory: process.memoryUsage(),
                 environment: NODE_ENV,
                 positionsCount: positions.length,
                 tradesCount: trades.length,
-                mongodbConnected: true
+                mongodbConnected: !USE_LOCAL_DATA,
+                useLocalData: USE_LOCAL_DATA
             };
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(healthStatus, null, 2));
         } catch (error) {
             console.error('Health check failed:', error);
-            const errorStatus = {
-                status: 'unhealthy',
-                timestamp: new Date().toISOString(),
-                error: error.message,
-                database: 'disconnected',
-                mongodbConnected: false
-            };
+            
+            // If we're using local data and have positions/trades loaded, we're still healthy
+            if (USE_LOCAL_DATA && positions.length > 0 && trades.length > 0) {
+                const healthStatus = {
+                    status: 'healthy',
+                    timestamp: new Date().toISOString(),
+                    uptime: process.uptime(),
+                    database: 'local',
+                    dataSource: 'Local JSON Files',
+                    memory: process.memoryUsage(),
+                    environment: NODE_ENV,
+                    positionsCount: positions.length,
+                    tradesCount: trades.length,
+                    mongodbConnected: false,
+                    useLocalData: USE_LOCAL_DATA,
+                    note: 'MongoDB unavailable but using local data'
+                };
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(healthStatus, null, 2));
+            } else {
+                const errorStatus = {
+                    status: 'unhealthy',
+                    timestamp: new Date().toISOString(),
+                    error: error.message,
+                    database: 'disconnected',
+                    dataSource: 'None',
+                    mongodbConnected: false,
+                    useLocalData: USE_LOCAL_DATA
+                };
 
-            res.writeHead(503, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(errorStatus, null, 2));
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(errorStatus, null, 2));
+            }
         }
     } else if (req.url === '/') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -674,7 +752,7 @@ const httpServer = http.createServer(async (req, res) => {
 // Start server after loading data
 async function startServer() {
     // Load data from MongoDB first
-    await loadDataFromMongoDB();
+    await loadData();
     
     // Start HTTP server for health checks
     httpServer.listen(PORT, () => {

@@ -26,12 +26,42 @@ This will create:
 - `data/positions.json` - 20,000 position records
 - `data/trades.json` - 60,000 trade records
 
-3. Start the server:
+3. **Choose your data source:**
+
+### Option A: Use Local JSON Files (No Database Required)
+```bash
+npm run start:local
+```
+
+### Option B: Use MongoDB Atlas (Cloud Database)
+First migrate data to MongoDB:
+```bash
+npm run migrate-to-mongodb
+```
+
+Then start normally:
 ```bash
 npm start
 ```
 
 The server will run on `ws://localhost:8080`
+
+## Data Source Configuration
+
+The server supports multiple data loading options:
+
+### 🏠 **Local JSON Files** (Recommended for testing)
+- **Pros**: No external dependencies, fastest startup, works offline
+- **Cons**: No persistence of live updates, larger memory usage
+- **Usage**: `npm run start:local` or set `USE_LOCAL_DATA=true`
+
+### ☁️ **MongoDB Atlas** (Recommended for production)
+- **Pros**: Scalable, persistent updates, query capabilities
+- **Cons**: Requires internet connection and MongoDB setup
+- **Usage**: `npm start` (default behavior)
+
+### 🔄 **Automatic Fallback**
+The server automatically falls back to local files if MongoDB is unavailable, ensuring reliable operation.
 
 ## Usage
 
