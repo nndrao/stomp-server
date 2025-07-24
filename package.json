@@ -10,15 +10,16 @@
   "scripts": {
     "start": "node server2.js",
     "dev": "node server2.js",
-    "start:local": "USE_LOCAL_DATA=true node server2.js",
-    "dev:local": "USE_LOCAL_DATA=true node server2.js",
+    "start:local": "cross-env USE_LOCAL_DATA=true node server2.js",
+    "dev:local": "cross-env USE_LOCAL_DATA=true node server2.js",
     "generate-data": "node generateData.js",
     "migrate-to-mongodb": "node migrateToMongoDB.js",
     "test-client": "node testClient.js",
     "example": "node exampleClient.js",
     "debug-health": "node debug-health.js",
     "test-mongo": "node test-mongo-connection.js",
-    "perf-test": "node performance-test.js"
+    "perf-test": "node performance-test.js",
+    "test-enhanced": "node testEnhancedClient.js"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
@@ -29,5 +30,8 @@
     "ws": "^8.16.0"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
 }

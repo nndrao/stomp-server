@@ -10,6 +10,14 @@ A STOMP server that publishes position and trade data for fixed income instrumen
 - Snapshot delivery followed by live updates
 - Automatic date updates to current date
 
+### 🎯 Enhanced Features
+- **Client-Specific Streaming**: Each client gets isolated data streams
+- **Automatic Cleanup**: Resources freed when clients disconnect
+- **Multi-tenant Support**: Multiple clients with different rates simultaneously
+- **Enhanced Logging**: Client-specific tracking and debugging
+- **Error Handling**: Clear error messages for invalid requests
+- **Backward Compatible**: Legacy patterns still supported
+
 ## Setup
 
 1. Install dependencies:
@@ -65,16 +73,30 @@ The server automatically falls back to local files if MongoDB is unavailable, en
 
 ## Usage
 
-The server requires a two-step process:
+### 🎯 Enhanced Client-Specific Streaming
 
-### Step 1: Subscribe to the topic
+The server supports client-specific data streams with automatic cleanup:
+
+#### Step 1: Subscribe to client-specific topic
+- Position data: `/snapshot/positions/{clientId}`
+- Trade data: `/snapshot/trades/{clientId}`
+
+#### Step 2: Send client-specific trigger
+- Position trigger: `/snapshot/positions/{clientId}/{rate}[/{batchSize}]`
+- Trade trigger: `/snapshot/trades/{clientId}/{rate}[/{batchSize}]`
+- Where `{clientId}` is your unique identifier, `{rate}` is messages per second, and `{batchSize}` is optional
+
+### 🔄 Legacy Support
+
+For backward compatibility, the original pattern still works:
+
+#### Step 1: Subscribe to generic topic
 - Position data: `/snapshot/positions`
 - Trade data: `/snapshot/trades`
 
-### Step 2: Send trigger message
-- Position trigger: Send any message to `/snapshot/positions/{rate}`
-- Trade trigger: Send any message to `/snapshot/trades/{rate}`
-- Where `{rate}` is messages per second (e.g., 1000)
+#### Step 2: Send generic trigger
+- Position trigger: `/snapshot/positions/{rate}[/{batchSize}]`
+- Trade trigger: `/snapshot/trades/{rate}[/{batchSize}]`
 
 ### Message Flow
 
@@ -85,6 +107,11 @@ The server requires a two-step process:
 5. Server continues sending live updates on the same subscription
 
 ### Example Clients
+
+Test enhanced client-specific functionality:
+```bash
+npm run test-enhanced
+```
 
 Test basic functionality:
 ```bash

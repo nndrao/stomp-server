@@ -332,10 +332,11 @@ function generateTradeUpdate(baseTrade) {
 
 // WebSocket server (will be attached to HTTP server)
 
-// Client management
+// Client management - enhanced to track client-specific data streams
 const clients = new Map();
+const clientDataStreams = new Map(); // Track active data streams per client
 
-// STOMP protocol implementation
+// STOMP protocol implementation - Enhanced
 class StompConnection {
     constructor(ws, id) {
         this.ws = ws;
@@ -343,6 +344,7 @@ class StompConnection {
         this.subscriptions = new Map();
         this.sessionId = `session-${id}`;
         this.connected = false;
+        this.liveUpdateIntervals = new Map(); // Track intervals per client-specific topic
     }
     
     send(command, headers = {}, body = '') {
@@ -430,6 +432,11 @@ class StompConnection {
         // For snapshot topics, just store the subscription
         if (destination.startsWith('/snapshot/')) {
             console.log(`Subscription recorded, waiting for trigger message...`);
+            
+            // Enhanced: Support client-specific subscriptions
+            if (destination.match(/^\/snapshot\/(positions|trades)\/[^/]+$/)) {
+                console.log(`🎯 Client-specific subscription detected: ${destination}`);
+            }
         }
     }
     
@@ -451,33 +458,70 @@ class StompConnection {
             'utf-8'
         );
         
-        // Check if this is a trigger message - support both rate and batch size
-        // If body contains the request string, use that instead of destination
+        // Enhanced trigger pattern: /snapshot/{dataType}/{clientId}/{rate}[/{batchSize}]
         const requestString = body && body.startsWith('/snapshot/') ? body : destination;
-        const match = requestString.match(/^\/snapshot\/(positions|trades)\/(\d+)(?:\/(\d+))?$/);
+        const match = requestString.match(/^\/snapshot\/(positions|trades)\/([^/]+)\/(\d+)(?:\/(\d+))?$/);
         
         if (match) {
-            const [fullMatch, dataType, rateStr, batchStr] = match;
+            const [fullMatch, dataType, clientId, rateStr, batchStr] = match;
             const rate = parseInt(rateStr);
             const batchSize = batchStr ? parseInt(batchStr) : Math.max(1, Math.floor(rate / 10));
             
-            // Log parsed values
-            console.log(`📝 Parsed request from ${body ? 'BODY' : 'DESTINATION'}: Full URL: ${fullMatch}, DataType: ${dataType}, Rate: ${rate}, BatchSize: ${batchSize}`);
+            console.log(`📝 Client-specific trigger pattern matched:`);
+            console.log(`   DataType: ${dataType}, ClientId: ${clientId}, Rate: ${rate}, BatchSize: ${batchSize}`);
             
-            // Find subscription for this data type
+            // Look for client-specific subscription: /snapshot/{dataType}/{clientId}
+            const clientSpecificTopic = `/snapshot/${dataType}/${clientId}`;
             let subscription = null;
+            
             for (const sub of this.subscriptions.values()) {
-                if (sub.destination === `/snapshot/${dataType}`) {
+                if (sub.destination === clientSpecificTopic) {
                     subscription = sub;
                     break;
                 }
             }
             
             if (subscription) {
-                console.log(`Trigger received! Starting ${dataType} delivery at ${rate} msg/sec with batch size ${batchSize}`);
-                this.startDataDelivery(dataType, rate, batchSize, subscription);
+                console.log(`🎯 Found client-specific subscription: ${clientSpecificTopic}`);
+                this.startClientSpecificDataDelivery(dataType, clientId, rate, batchSize, subscription);
             } else {
-                console.log(`No subscription found for /snapshot/${dataType}`);
+                console.log(`❌ No subscription found for client-specific topic: ${clientSpecificTopic}`);
+                console.log(`💡 Client should subscribe to: ${clientSpecificTopic}`);
+                
+                // Send error message to client
+                this.send('MESSAGE', {
+                    'destination': '/errors',
+                    'message-id': `error-${Date.now()}`
+                }, `Error: No subscription found for ${clientSpecificTopic}. Please subscribe first.`);
+            }
+        } else {
+            // Backward compatibility: Check for legacy pattern
+            const legacyMatch = requestString.match(/^\/snapshot\/(positions|trades)\/(\d+)(?:\/(\d+))?$/);
+            if (legacyMatch) {
+                const [fullMatch, dataType, rateStr, batchStr] = legacyMatch;
+                const rate = parseInt(rateStr);
+                const batchSize = batchStr ? parseInt(batchStr) : Math.max(1, Math.floor(rate / 10));
+                
+                console.log(`📝 Legacy pattern detected - using generic topic`);
+                console.log(`   DataType: ${dataType}, Rate: ${rate}, BatchSize: ${batchSize}`);
+                
+                // Find generic subscription
+                let subscription = null;
+                for (const sub of this.subscriptions.values()) {
+                    if (sub.destination === `/snapshot/${dataType}`) {
+                        subscription = sub;
+                        break;
+                    }
+                }
+                
+                if (subscription) {
+                    console.log(`Trigger received! Starting ${dataType} delivery at ${rate} msg/sec with batch size ${batchSize}`);
+                    this.startDataDelivery(dataType, rate, batchSize, subscription);
+                } else {
+                    console.log(`❌ No subscription found for /snapshot/${dataType}`);
+                }
+            } else {
+                console.log(`❓ Unrecognized trigger pattern: ${requestString}`);
             }
         }
     }
@@ -630,14 +674,141 @@ class StompConnection {
         subscription.updateInterval = updateInterval;
     }
     
+    startClientSpecificDataDelivery(dataType, clientId, rate, batchSize, subscription) {
+        const data = dataType === 'positions' ? positions : trades;
+        let index = 0;
+        let batchNumber = 1;
+        
+        const snapshotBatchInterval = 10; // 10ms intervals for snapshots
+        const deliveredRecords = [];
+        const streamKey = `${dataType}-${clientId}`;
+        
+        console.log(`🚀 Starting client-specific data delivery:`);
+        console.log(`   Client: ${clientId}`);
+        console.log(`   Data Type: ${dataType}`);
+        console.log(`   Rate: ${rate} msg/sec`);
+        console.log(`   Batch Size: ${batchSize}`);
+        console.log(`   Publishing to: ${subscription.destination}`);
+        
+        // Track this stream for cleanup
+        if (!clientDataStreams.has(this.id)) {
+            clientDataStreams.set(this.id, new Map());
+        }
+        clientDataStreams.get(this.id).set(streamKey, { subscription, deliveredRecords });
+        
+        const sendBatch = () => {
+            if (index >= data.length) {
+                // Snapshot complete - send success message
+                this.send('MESSAGE', {
+                    'subscription': subscription.id,
+                    'message-id': `msg-${Date.now()}`,
+                    'destination': subscription.destination,
+                    'client-id': clientId,
+                    'message-type': 'snapshot-complete'
+                }, `Success: All ${data.length} ${dataType} records delivered to client '${clientId}'. Starting live updates...`);
+                
+                console.log(`📊 SNAPSHOT COMPLETE for client '${clientId}': ${deliveredRecords.length} records delivered`);
+                
+                // Start client-specific live updates
+                this.startClientSpecificLiveUpdates(dataType, clientId, rate, subscription, deliveredRecords);
+                return;
+            }
+            
+            const endIndex = Math.min(index + batchSize, data.length);
+            const batch = data.slice(index, endIndex);
+            deliveredRecords.push(...batch);
+            
+            // Send to client-specific topic
+            this.send('MESSAGE', {
+                'subscription': subscription.id,
+                'message-id': `msg-${Date.now()}-batch-${batchNumber}`,
+                'destination': subscription.destination,
+                'content-type': 'application/json',
+                'batch-number': batchNumber,
+                'client-id': clientId,
+                'message-type': 'snapshot'
+            }, JSON.stringify(batch));
+            
+            console.log(`📦 Client '${clientId}' batch ${batchNumber}: ${batch.length} records (${index + 1}-${endIndex}/${data.length})`);
+            
+            index = endIndex;
+            batchNumber++;
+            
+            setTimeout(sendBatch, snapshotBatchInterval);
+        };
+        
+        sendBatch();
+    }
+    
+    startClientSpecificLiveUpdates(dataType, clientId, rate, subscription, deliveredRecords) {
+        let updateNumber = 1;
+        const streamKey = `${dataType}-${clientId}`;
+        
+        console.log(`🔄 Starting live updates for client '${clientId}': ${dataType} at ${rate} msg/sec`);
+        
+        const updateInterval = setInterval(() => {
+            // Check if client is still connected
+            if (!this.connected || !clients.has(this.id)) {
+                console.log(`🔌 Client ${clientId} disconnected - stopping live updates`);
+                clearInterval(updateInterval);
+                return;
+            }
+            
+            // Select random record from delivered records
+            const randomRecord = deliveredRecords[Math.floor(Math.random() * deliveredRecords.length)];
+            
+            let update;
+            if (dataType === 'positions') {
+                update = generatePositionUpdate(randomRecord);
+            } else {
+                update = generateTradeUpdate(randomRecord);
+            }
+            
+            // Send to client-specific topic
+            this.send('MESSAGE', {
+                'subscription': subscription.id,
+                'message-id': `msg-${Date.now()}-${Math.random()}`,
+                'destination': subscription.destination,
+                'content-type': 'application/json',
+                'message-type': 'live-update',
+                'client-id': clientId,
+                'update-number': updateNumber
+            }, JSON.stringify([update]));
+            
+            const recordId = dataType === 'positions' ? update.positionId : update.tradeId;
+            console.log(`🔄 Live update ${updateNumber} → client '${clientId}': ${recordId}`);
+            
+            updateNumber++;
+        }, 1000 / rate);
+        
+        // Store interval for cleanup
+        this.liveUpdateIntervals.set(streamKey, updateInterval);
+    }
+    
     handleUnsubscribe(headers) {
         const id = headers.id;
         const subscription = this.subscriptions.get(id);
         
         if (subscription) {
+            // Stop any legacy live updates for this subscription
             if (subscription.updateInterval) {
                 clearInterval(subscription.updateInterval);
             }
+            
+            // Stop any client-specific live updates for this subscription
+            if (subscription.destination.match(/^\/snapshot\/(positions|trades)\/[^/]+$/)) {
+                const parts = subscription.destination.split('/');
+                const dataType = parts[2];
+                const clientId = parts[3];
+                const streamKey = `${dataType}-${clientId}`;
+                
+                if (this.liveUpdateIntervals.has(streamKey)) {
+                    clearInterval(this.liveUpdateIntervals.get(streamKey));
+                    this.liveUpdateIntervals.delete(streamKey);
+                    console.log(`🛑 Stopped live updates for client '${clientId}' on ${dataType}`);
+                }
+            }
+            
             this.subscriptions.delete(id);
             console.log(`Client ${this.id} unsubscribed from ${subscription.destination}`);
         }
@@ -649,14 +820,33 @@ class StompConnection {
     }
     
     cleanup() {
-        // Clear all intervals
+        console.log(`🧹 Cleaning up client ${this.id}...`);
+        
+        // Clear all legacy live update intervals
         for (const subscription of this.subscriptions.values()) {
             if (subscription.updateInterval) {
                 clearInterval(subscription.updateInterval);
             }
         }
+        
+        // Clear all client-specific live update intervals
+        for (const [streamKey, interval] of this.liveUpdateIntervals.entries()) {
+            clearInterval(interval);
+            console.log(`🛑 Stopped live updates for stream: ${streamKey}`);
+        }
+        this.liveUpdateIntervals.clear();
+        
+        // Clear client data streams tracking
+        if (clientDataStreams.has(this.id)) {
+            const streams = clientDataStreams.get(this.id);
+            console.log(`🗑️ Removing ${streams.size} data streams for client ${this.id}`);
+            clientDataStreams.delete(this.id);
+        }
+        
         this.subscriptions.clear();
         this.connected = false;
+        
+        console.log(`✅ Client ${this.id} cleanup complete`);
     }
 }
 
@@ -792,23 +982,25 @@ async function startServer() {
         });
     });
 
-    console.log(`🚀 STOMP Fixed Income Server running on port ${PORT}`);
+    console.log(`🚀 Enhanced STOMP Fixed Income Server running on port ${PORT}`);
     console.log(`📋 Health check: http://localhost:${PORT}/health`);
     console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
     console.log('');
-    console.log('Usage:');
-    console.log('1. Client subscribes to: /snapshot/positions or /snapshot/trades');
-    console.log('2. Client sends trigger message to: /snapshot/positions/{rate} or /snapshot/trades/{rate}');
-    console.log('   Optional batch size: /snapshot/positions/{rate}/{batch}');
-    console.log('   Where {rate} is messages per second (e.g., 1000) and {batch} is records per batch');
-    console.log('3. Server sends all snapshot data at specified rate');
-    console.log('4. Server sends "Success" message when complete');
-    console.log('5. Server continues with live updates on the same topic');
+    console.log('🎯 Enhanced Usage (Client-Specific Streaming):');
+    console.log('1. Client subscribes to: /snapshot/{dataType}/{clientId}');
+    console.log('2. Client sends trigger to: /snapshot/{dataType}/{clientId}/{rate}[/{batchSize}]');
+    console.log('3. Server delivers data to that specific client only');
+    console.log('4. Automatic cleanup when client disconnects');
     console.log('');
-    console.log('Examples:');
+    console.log('📡 Examples:');
+    console.log('  Subscribe to: /snapshot/positions/TRADER001');
+    console.log('  Trigger: /snapshot/positions/TRADER001/1000');
+    console.log('  Subscribe to: /snapshot/trades/HFT_CLIENT');
+    console.log('  Trigger: /snapshot/trades/HFT_CLIENT/5000/100');
+    console.log('');
+    console.log('🔄 Legacy Support:');
     console.log('  Subscribe to: /snapshot/positions');
-    console.log('  Send trigger to: /snapshot/positions/1000 (batch size auto-calculated)');
-    console.log('  Send trigger to: /snapshot/positions/1000/50 (batch size = 50)');
+    console.log('  Trigger: /snapshot/positions/1000');
     console.log('');
 }
 
