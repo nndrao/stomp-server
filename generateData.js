@@ -531,7 +531,7 @@ for (let i = 0; i < 5000; i++) {
 
 // Generate positions
 const positions = [];
-for (let i = 0; i < 20000; i++) {
+for (let i = 0; i < 1000; i++) {
     positions.push(generatePosition(i, cusipList));
     if (i % 1000 === 0) {
         console.log(`Generated ${i} positions...`);
@@ -540,7 +540,7 @@ for (let i = 0; i < 20000; i++) {
 
 // Generate trades
 const trades = [];
-for (let i = 0; i < 60000; i++) {
+for (let i = 0; i < 1000; i++) {
     trades.push(generateTrade(i, cusipList));
     if (i % 5000 === 0) {
         console.log(`Generated ${i} trades...`);
